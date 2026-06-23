@@ -38,6 +38,15 @@ app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/ai-history', aiHistoryRoutes);
 app.use('/api/v1/bookmarks', bookmarkRoutes);
 
+// Health Check / Root Route
+app.get('/', (req, res) => {
+  res.status(200).json({
+    status: 'success',
+    message: '🚀 CareerPilot AI Backend Server is running successfully!',
+    version: '1.0.0'
+  });
+});
+
 app.use(errorHandler);
 
 const startServer = async () => {
