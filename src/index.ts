@@ -7,6 +7,7 @@ const customFetch = (url: any, init?: any) => fetch(url, { ...init, agent });
 (global as any).fetch = customFetch;
 
 import express from 'express';
+import multer from 'multer';
 import { connectDB } from './config/db';
 import { env } from './config/env';
 import { logger } from './utils/logger';
@@ -14,15 +15,20 @@ import { setupSecurityMiddlewares } from './middlewares/security.middleware';
 import { errorHandler } from './middlewares/error.middleware';
 import { setupAuthMiddleware, requireAuthentication } from './middlewares/auth.middleware';
 
-// Import Routes
-import aiRoutes from './routes/AIRoutes';
-import careerRoutes from './routes/CareerPathRoutes';
-import userRoutes from './routes/UserRoutes';
-import notificationRoutes from './routes/NotificationRoutes';
-import aiHistoryRoutes from './routes/AIHistoryRoutes';
-import bookmarkRoutes from './routes/BookmarkRoutes';
+// Controllers
+import { AIController } from './controllers/AIController';
+import { CareerPathController } from './controllers/CareerPathController';
+import { getUser, getMyProfile, updateMyProfile, getOverview } from './controllers/UserController';
+import { getMyNotifications, markAsRead } from './controllers/NotificationController';
+import { getMyAIHistory } from './controllers/AIHistoryController';
+import { toggleBookmark, checkBookmark } from './controllers/BookmarkController';
 
 const app = express();
+
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB
+});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -30,13 +36,36 @@ app.use(express.urlencoded({ extended: true }));
 setupSecurityMiddlewares(app);
 setupAuthMiddleware(app);
 
-// Mount Routes
-app.use('/api/v1/ai', requireAuthentication, aiRoutes);
-app.use('/api/v1/careers', careerRoutes);
-app.use('/api/v1/users', userRoutes);
-app.use('/api/v1/notifications', notificationRoutes);
-app.use('/api/v1/ai-history', aiHistoryRoutes);
-app.use('/api/v1/bookmarks', bookmarkRoutes);
+// AI Routes
+app.post('/api/v1/ai/resume/analyze', requireAuthentication, upload.single('resume'), AIController.analyzeResume);
+app.post('/api/v1/ai/cover-letter/generate', requireAuthentication, AIController.generateCoverLetter);
+app.post('/api/v1/ai/roadmap/generate', requireAuthentication, AIController.generateRoadmap);
+app.post('/api/v1/ai/interview/questions', requireAuthentication, AIController.generateInterviewQuestions);
+app.get('/api/v1/ai/chat/sessions', requireAuthentication, AIController.getChatSessions);
+app.get('/api/v1/ai/chat/sessions/:id', requireAuthentication, AIController.getChatSessionById);
+app.post('/api/v1/ai/chat', requireAuthentication, AIController.chat);
+app.post('/api/v1/ai/chat/sync', requireAuthentication, AIController.syncChatSession);
+
+// Career Paths Routes
+app.get('/api/v1/careers', CareerPathController.getAll);
+app.get('/api/v1/careers/:id', CareerPathController.getById);
+
+// User Routes
+app.get('/api/v1/users/overview', requireAuthentication, getOverview);
+app.get('/api/v1/users/profile', requireAuthentication, getMyProfile);
+app.put('/api/v1/users/profile', requireAuthentication, updateMyProfile);
+app.get('/api/v1/users/:id', getUser);
+
+// Notification Routes
+app.get('/api/v1/notifications', requireAuthentication, getMyNotifications);
+app.put('/api/v1/notifications/:id/read', requireAuthentication, markAsRead);
+
+// AI History Routes
+app.get('/api/v1/ai-history', requireAuthentication, getMyAIHistory);
+
+// Bookmark Routes
+app.post('/api/v1/bookmarks/toggle', requireAuthentication, toggleBookmark);
+app.get('/api/v1/bookmarks/check/:careerId', requireAuthentication, checkBookmark);
 
 // Health Check / Root Route
 app.get('/', (req, res) => {
@@ -64,5 +93,3 @@ if (require.main === module) {
 }
 
 export default app;
-
-
