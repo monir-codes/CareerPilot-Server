@@ -104,3 +104,5 @@ typings/
 # Build output
 dist/
 build/
+
+.vercel
