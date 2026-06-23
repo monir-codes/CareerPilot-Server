@@ -9,6 +9,10 @@ export const connectDB = async () => {
     logger.info("Using existing MongoDB connection");
     return;
   }
+  if (!env.MONGO_URI) {
+    logger.warn("⚠️ MONGO_URI is missing in environment variables. Database will not connect.");
+    return;
+  }
   try {
     logger.info("Attempting to connect to MongoDB...");
     const conn = await mongoose.connect(env.MONGO_URI, {

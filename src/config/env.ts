@@ -4,10 +4,17 @@ dotenv.config();
 
 const envSchema = z.object({
   PORT: z.string().default('5000'),
-  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  MONGO_URI: z.string().min(1, "MongoDB URI is required"),
-  CLIENT_URL: z.string().min(1).default('http://localhost:3000'),
-  GEMINI_API_KEY: z.string().min(1, "Gemini API Key is required"),
+  NODE_ENV: z.string().default('development'),
+  MONGO_URI: z.string().default(''),
+  CLIENT_URL: z.string().default('http://localhost:3000'),
+  GEMINI_API_KEY: z.string().default(''),
 });
 
-export const env = envSchema.parse(process.env);
+// Avoid crashing Vercel serverless functions on cold start if env vars are missing
+export const env = {
+  PORT: process.env.PORT || '5000',
+  NODE_ENV: process.env.NODE_ENV || 'development',
+  MONGO_URI: process.env.MONGO_URI || '',
+  CLIENT_URL: process.env.CLIENT_URL || 'http://localhost:3000',
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY || ''
+};
