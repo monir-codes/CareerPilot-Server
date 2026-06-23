@@ -49,6 +49,9 @@ const startServer = async () => {
 
 if (require.main === module) {
   startServer();
+} else {
+  // Required for Vercel serverless functions
+  connectDB();
 }
 
 export default app;
