@@ -1,10 +1,3 @@
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; // Bypass SSL validation for 2026 clock
-import fetch from 'node-fetch';
-import https from 'https';
-
-const agent = new https.Agent({ rejectUnauthorized: false });
-const customFetch = (url: any, init?: any) => fetch(url, { ...init, agent });
-(global as any).fetch = customFetch;
 
 import express, { Request, Response, NextFunction } from 'express';
 import multer from 'multer';
@@ -43,6 +36,16 @@ app.use(express.urlencoded({ extended: true }));
 
 setupSecurityMiddlewares(app);
 setupAuthMiddleware(app);
+
+// Connect DB for serverless environments before handling any routes
+app.use(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
 
 // AI Routes
 app.post('/api/v1/ai/resume/analyze', requireAuthentication, upload.single('resume'), async (req: Request, res: Response, next: NextFunction) => {
@@ -449,19 +452,5 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 app.use(errorHandler);
-
-const startServer = async () => {
-  await connectDB();
-  app.listen(env.PORT, () => {
-    logger.info("Server running on port " + env.PORT + " in " + env.NODE_ENV + " mode");
-  });
-};
-
-if (require.main === module) {
-  startServer();
-} else {
-  // Required for Vercel serverless functions
-  connectDB();
-}
 
 export default app;
