@@ -1,8 +1,7 @@
 import mongoose from 'mongoose';
 import { env } from './env';
-import { logger } from '../utils/logger';
 
-// Vercel Serverless Function Database Caching
+// Global cache for Vercel Serverless Functions to prevent multiple active connections
 let cached = (global as any).mongoose;
 
 if (!cached) {
@@ -11,24 +10,19 @@ if (!cached) {
 
 export const connectDB = async () => {
   if (cached.conn) {
-    logger.info("Using existing globally cached MongoDB connection");
+    console.log('✅ Using globally cached MongoDB connection');
     return cached.conn;
   }
 
-  if (!env.MONGO_URI) {
-    logger.warn("⚠️ MONGO_URI is missing in environment variables. Database will not connect.");
-    return null;
-  }
-
   if (!cached.promise) {
-    logger.info("Attempting to connect to MongoDB...");
+    console.log('🔄 Attempting to connect to MongoDB...');
     const opts = {
       bufferCommands: false,
-      serverSelectionTimeoutMS: 5000 // fail fast if hanging
+      serverSelectionTimeoutMS: 5000,
     };
 
     cached.promise = mongoose.connect(env.MONGO_URI, opts).then((mongooseInstance) => {
-      logger.info("MongoDB Connected: " + mongooseInstance.connection.host);
+      console.log('🚀 MongoDB Connected: ' + mongooseInstance.connection.host);
       return mongooseInstance;
     });
   }
@@ -37,7 +31,7 @@ export const connectDB = async () => {
     cached.conn = await cached.promise;
     return cached.conn;
   } catch (error) {
-    logger.error('MongoDB connection error:', error);
+    console.error('❌ MongoDB connection error:', error);
     cached.promise = null;
     throw error;
   }
