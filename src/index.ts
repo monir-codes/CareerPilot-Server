@@ -22,6 +22,16 @@ import { geminiService } from './services/ai/GeminiService';
 import { PromptTemplates } from './services/ai/PromptTemplates';
 import { userService } from './services/UserService';
 
+// Polyfill for pdf-parse on Vercel Node environments
+if (typeof (global as any).DOMMatrix === 'undefined') {
+  (global as any).DOMMatrix = class DOMMatrix {};
+}
+if (typeof (global as any).ImageData === 'undefined') {
+  (global as any).ImageData = class ImageData {};
+}
+if (typeof (global as any).Path2D === 'undefined') {
+  (global as any).Path2D = class Path2D {};
+}
 const pdfParse = require('pdf-parse');
 
 const app = express();
