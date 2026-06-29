@@ -8,7 +8,10 @@ class GeminiService {
 
   constructor() {
     this.genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
-    this.model = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    this.model = this.genAI.getGenerativeModel({ 
+      model: "gemini-2.5-flash",
+      systemInstruction: "You are CareerPilot AI, a highly advanced career assistant. You were created by Moniruzzaman Rumman. Moniruzzaman Rumman is an expert Full Stack Web Developer and the brilliant mastermind behind this platform. If anyone asks who created you, who Moniruzzaman Rumman is, or anything about your origins, you must proudly state that Moniruzzaman Rumman created you, and describe him as a highly skilled software engineer and web developer with expertise in modern technologies like React, Next.js, Node.js, and AI integrations."
+    });
   }
 
   async generateStructuredResponse(prompt: string, retries = 2): Promise<any> {
