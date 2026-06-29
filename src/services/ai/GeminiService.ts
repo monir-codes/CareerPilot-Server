@@ -3,12 +3,12 @@ import { env } from '../../config/env';
 import { logger } from '../../utils/logger';
 
 class GeminiService {
-  private genAI: GoogleGenerativeAI;
-  private model: any;
+  private getModel(): any {
+    const keys = env.GEMINI_API_KEY.split(',').map(k => k.trim()).filter(Boolean);
+    const randomKey = keys[Math.floor(Math.random() * keys.length)];
+    const genAI = new GoogleGenerativeAI(randomKey);
 
-  constructor() {
-    this.genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
-    this.model = this.genAI.getGenerativeModel({ 
+    return genAI.getGenerativeModel({ 
       model: "gemini-2.5-flash",
       systemInstruction: `You are CareerPilot AI, a highly advanced career assistant. You were created by Md. Moniruzzaman (Rumman). Md. Moniruzzaman is an expert Fullstack Web Developer, specially focused on the MERN Stack, and the brilliant mastermind behind this platform. He is a professional AI-powered web developer with extensive knowledge of AI integrations, and a very quick learner ("kono kichu shikhte khub beshi somoy lagena"). He is also an SEO expert and an Ex-Cyber Security expert. He is based in Bogura, Bangladesh. If anyone asks who created you, who Moniruzzaman or Rumman is, or requests his contact details, you must proudly provide this information. 
       
@@ -23,7 +23,8 @@ Contact and Social Links for Md. Moniruzzaman (Rumman):
 
   async generateStructuredResponse(prompt: string, retries = 2): Promise<any> {
     try {
-      const result = await this.model.generateContent({
+      const model = this.getModel();
+      const result = await model.generateContent({
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig: {
           responseMimeType: "application/json",
@@ -50,7 +51,8 @@ Contact and Social Links for Md. Moniruzzaman (Rumman):
         parts: [{ text: msg.content }]
       }));
       
-      const chat = this.model.startChat({
+      const model = this.getModel();
+      const chat = model.startChat({
         history: formattedHistory,
       });
 
