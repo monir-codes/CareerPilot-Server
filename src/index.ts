@@ -230,19 +230,38 @@ app.post('/api/v1/ai/chat/sync', requireAuthentication, async (req: Request, res
 // Career Paths Routes
 app.get('/api/v1/careers', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { category, search } = req.query;
+    const { category, search, exp, sort, page = 1, limit = 9 } = req.query;
     let query: any = { isDeleted: false };
     
     if (category && category !== 'All Categories') {
       query.category = category;
     }
     
+    if (exp && exp !== 'All Levels') {
+      query.exp = exp;
+    }
+    
     if (search) {
       query.$text = { $search: search as string };
     }
 
-    const careers = await CareerPath.find(query);
-    sendSuccess(res, careers, 'Careers fetched successfully', 200);
+    let sortObj: any = {};
+    if (sort === 'salary_desc') {
+      sortObj = { 'salary.max': -1 }; // assuming salary object exists, else we could sort by string if it's "100k"
+    } else if (sort === 'latest') {
+      sortObj = { createdAt: -1 };
+    } else if (search) {
+      sortObj = { score: { $meta: 'textScore' } };
+    }
+
+    const pageNum = parseInt(page as string, 10);
+    const limitNum = parseInt(limit as string, 10);
+    const skip = (pageNum - 1) * limitNum;
+
+    const total = await CareerPath.countDocuments(query);
+    const careers = await CareerPath.find(query).sort(sortObj).skip(skip).limit(limitNum);
+    
+    sendSuccess(res, { careers, total, page: pageNum, totalPages: Math.ceil(total / limitNum) }, 'Careers fetched successfully', 200);
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to fetch careers' });
   }
@@ -307,8 +326,10 @@ app.get('/api/v1/users/profile', requireAuthentication, async (req: Request, res
   try {
     const clerkId = (req as any).auth?.userId;
     if (!clerkId) return res.status(401).json({ success: false, message: 'Unauthorized' });
-    const user = await User.findOne({ clerkId });
-    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    let user = await User.findOne({ clerkId });
+    if (!user) {
+      user = await User.create({ clerkId });
+    }
     sendSuccess(res, user);
   } catch (error) {
     next(error);
@@ -323,9 +344,8 @@ app.put('/api/v1/users/profile', requireAuthentication, async (req: Request, res
     const user = await User.findOneAndUpdate(
       { clerkId },
       { fullName, title, bio },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true, upsert: true }
     );
-    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
     sendSuccess(res, user, 'Profile updated successfully');
   } catch (error) {
     next(error);

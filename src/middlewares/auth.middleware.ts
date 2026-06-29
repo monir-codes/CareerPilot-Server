@@ -4,7 +4,11 @@ import { User } from '../models/User.model';
 
 export const setupAuthMiddleware = (app: Application) => {
   // Parses the Clerk token and attaches auth object to req
-  app.use(clerkMiddleware({ clockSkewInMs: 315360000000 }));
+  app.use(clerkMiddleware({ 
+    publishableKey: process.env.CLERK_PUBLISHABLE_KEY,
+    secretKey: process.env.CLERK_SECRET_KEY,
+    clockSkewInMs: 315360000000 
+  }));
 };
 
 // Use this on protected routes

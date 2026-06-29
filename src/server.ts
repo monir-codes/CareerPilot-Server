@@ -1,6 +1,6 @@
+import { env } from './config/env';
 import app from './index';
 import { connectDB } from './config/db';
-import { env } from './config/env';
 import { logger } from './utils/logger';
 
 const startServer = async () => {

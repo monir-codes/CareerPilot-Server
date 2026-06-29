@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { env } from './env';
+import { logger } from '../utils/logger';
 
 // Global cache for Vercel Serverless Functions to prevent multiple active connections
 let cached = (global as any).mongoose;
@@ -24,6 +25,26 @@ export const connectDB = async () => {
     cached.promise = mongoose.connect(env.MONGO_URI, opts).then((mongooseInstance) => {
       console.log('🚀 MongoDB Connected: ' + mongooseInstance.connection.host);
       return mongooseInstance;
+    }).catch(async (error) => {
+      if (env.MONGO_URI.includes('localhost') || env.MONGO_URI.includes('127.0.0.1')) {
+        console.log('⚠️ Failed to connect to local MongoDB. Falling back to mongodb-memory-server...');
+        try {
+          const { MongoMemoryServer } = await import('mongodb-memory-server');
+          const mongoServer = await MongoMemoryServer.create();
+          const memoryUri = mongoServer.getUri();
+          console.log(`🧠 In-Memory MongoDB started at ${memoryUri}`);
+          
+          // Also run seed data since it's an empty DB
+          const mongooseInstance = await mongoose.connect(memoryUri, opts);
+          
+          // We can optionally seed it here, but server might be enough to just start without crashing
+          return mongooseInstance;
+        } catch (memError) {
+          console.error('❌ Failed to start in-memory MongoDB:', memError);
+          throw error; // throw original error
+        }
+      }
+      throw error;
     });
   }
 
