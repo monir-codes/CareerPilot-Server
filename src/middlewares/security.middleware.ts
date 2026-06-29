@@ -10,7 +10,11 @@ import { env } from '../config/env';
 export const setupSecurityMiddlewares = (app: Application) => {
   app.use(helmet());
   app.use(cors({ 
-    origin: env.CLIENT_URL, 
+    origin: function (origin, callback) {
+      // allow requests with no origin (like mobile apps or curl requests)
+      // and allow all other origins
+      callback(null, true);
+    },
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization', 'x-test-user-id']
   }));
