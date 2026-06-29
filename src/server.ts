@@ -6,8 +6,8 @@ import { logger } from './utils/logger';
 const startServer = async () => {
   try {
     // Connect to database before starting server
-    await connectDB();
-    
+    // await connectDB();
+
     app.listen(env.PORT, () => {
       logger.info(`🚀 Server running on port ${env.PORT} in ${env.NODE_ENV} mode`);
       logger.info(`Local URL: http://localhost:${env.PORT}`);

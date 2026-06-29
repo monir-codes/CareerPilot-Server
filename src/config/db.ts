@@ -29,14 +29,15 @@ export const connectDB = async () => {
       if (env.MONGO_URI.includes('localhost') || env.MONGO_URI.includes('127.0.0.1')) {
         console.log('⚠️ Failed to connect to local MongoDB. Falling back to mongodb-memory-server...');
         try {
-          const { MongoMemoryServer } = await import('mongodb-memory-server');
+          const memServerModule = 'mongodb-memory-server';
+          const { MongoMemoryServer } = await import(memServerModule);
           const mongoServer = await MongoMemoryServer.create();
           const memoryUri = mongoServer.getUri();
           console.log(`🧠 In-Memory MongoDB started at ${memoryUri}`);
-          
+
           // Also run seed data since it's an empty DB
           const mongooseInstance = await mongoose.connect(memoryUri, opts);
-          
+
           // We can optionally seed it here, but server might be enough to just start without crashing
           return mongooseInstance;
         } catch (memError) {
